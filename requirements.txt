@@ -1,0 +1,14 @@
+# infinite-video-pipeline — free web-based AI generator stack
+# Install: pip install -r requirements.txt
+# Optional system dep: brew install ffmpeg
+
+# HTTP / web automation
+requests>=2.31.0
+crawl4ai==0.8.6          # browser automation fallback (already installed globally)
+
+# Free TTS (no API key required)
+edge-tts>=6.1.9          # Microsoft Edge neural TTS — primary
+gtts>=2.5.1              # Google TTS — fallback
+
+# Optional: richer story generation (requires ANTHROPIC_API_KEY env var)
+anthropic>=0.25.0
