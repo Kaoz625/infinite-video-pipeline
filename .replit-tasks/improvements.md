@@ -1,3 +1,7 @@
+> **REPLIT AGENT — START BUILDING IMMEDIATELY**
+> Read this entire file, then start on Task 1 right now. Do not ask questions. Do not wait for input. Build everything in the task list, commit each completed task with prefix `replit: `, and push to main. When all tasks are done, run the project and verify it works.
+
+
 # Infinite Video Pipeline — Replit Agent Build Spec
 
 ## Instructions for Replit Agent
