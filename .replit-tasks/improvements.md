@@ -1,50 +1,39 @@
-# infinite-video-pipeline — Replit Import Notes
+# Replit Agent Task Spec
 
-## What This Is
-End-to-end free AI video pipeline: story prompt → illustrated video with narration.
-No local GPU. No paid API keys required (Claude optional for richer stories).
+## Instructions for Replit Agent
+You are building/improving this project. Read this file carefully before touching any code.
+Commit all changes with prefix "replit: " and push to main when done.
 
-## Stack
-- Story: Claude Haiku (optional) or built-in template engine
-- Images: Pollinations.ai → Craiyon → HuggingFace SDXL (free, auto-fallback)
-- TTS: edge-tts (Microsoft) → gTTS (Google) fallback
-- Video: FFmpeg (local)
+## Stack Rules (non-negotiable)
+- Static → Cloudflare Pages (never Vercel)
+- DB → Supabase self-hosted Docker (never cloud Supabase)
+- Auth → NextAuth.js (free, not Auth0/Clerk)
+- AI → Claude Sonnet 4.6 via Anthropic API (model: claude-sonnet-4-6)
+- Payments (adult) → CCBill or Segpay only
 
-## Current State (2026-05-02)
-- crawl4ai: 0.8.6 (already at latest — no update needed)
-- requirements.txt: up to date
-- Open-Higgsfield-AI integration: **REPLACED** — use Open-Generative-AI instead (see below)
+## Improvements To Make
+1. **Audit current state** — Read all pipeline scripts (free_pipeline.py, children_pipeline.py, image_generator.py, video_generator.py, web_image_generator.py) and requirements.txt. Document which APIs are currently used, what works, and what is broken/incomplete. Add a `AUDIT.md` file with findings.
 
-## Improvements Roadmap
+2. **Add Open-Generative-AI integration** — Integrate https://github.com/Anil-matcha/Open-Generative-AI which provides 200+ image/video/lip-sync models via Muapi.ai API (NOT Open-Higgsfield-AI — that repo is dead). Create `muapi_generator.py` using `requests` to call Muapi.ai endpoints. Default image model: `flux-schnell`. Default video model: `wan-i2v` (image-to-video). Env var: `MUAPI_API_KEY` (user supplies from muapi.ai). If key not set, fall back to free providers (Pollinations.ai → Craiyon → HuggingFace SDXL). Add `muapi` as a provider option in the unified CLI.
 
-### Task 1 — Integrate Open-Generative-AI as primary image/video source (HIGH PRIORITY)
-Repo: https://github.com/Anil-matcha/Open-Generative-AI
-What it is: Unified interface for 200+ AI image/video/lip-sync models via Muapi.ai API.
-Covers: Image Studio, Video Studio, Lip Sync Studio, Cinema Studio.
+3. **Add batch processing queue** — Create `batch_processor.py` with a simple file-based queue system. Queue format: JSON files in `queue/pending/`. Processor reads each job, runs the appropriate generator, moves completed jobs to `queue/done/` with output paths. Add a `run_batch.py` CLI: `python run_batch.py --jobs queue/pending/`.
 
-Integration steps for Replit agent:
-1. Add `muapi` as an HTTP client target — use `requests` to hit Muapi.ai endpoints
-2. Add `MUAPI_API_KEY` to `.env` (user supplies their own key from muapi.ai)
-3. In `free_pipeline.py`, add a `MuapiImageSource` class:
-   - POST to `https://api.muapi.ai/v1/images/generate` with model + prompt
-   - Use model `flux-schnell` as default (fast, high quality)
-   - Fall back to existing Pollinations.ai → Craiyon chain if MUAPI_API_KEY not set
-4. Add a `MuapiVideoSource` class for video frames:
-   - POST to `https://api.muapi.ai/v1/videos/generate`
-   - Use model `wan-i2v` (image-to-video) to animate generated frames
-5. Update README with: "Set MUAPI_API_KEY for 200+ model access via muapi.ai"
+4. **Improve output quality** — After each generated image/video, use Claude Vision (claude-sonnet-4-6) to score quality (1-10). If score < 6, automatically retry with adjusted parameters. Save scores to `outputs/quality_log.json`.
 
-- [ ] Replace Open-Higgsfield (404) with fal.ai free tier as secondary fallback
-  - fal.ai/models/fal-ai/flux/schnell — free, fast FLUX image generation
-  - pip install fal-client; env var: FAL_KEY
-- [ ] Add Seedance 2.0 multishot workflow (storyboard → scene-by-scene video)
-  - Reference: github.com/sarpstar/seedance2.0-rehber
-- [ ] Add Replicate free tier (SDXL-turbo) as image fallback
-- [ ] Add subtitle/caption overlay using FFmpeg drawtext filter
-- [ ] Add background music via freesound.org API (free with key)
+5. **Add unified CLI** — `main.py` as single entry point: `python main.py --type image --prompt "..." --provider muapi` or `--provider free`. Support: `--type image|video`, `--prompt TEXT`, `--provider free|muapi|web`, `--output-dir PATH`, `--batch FILE`.
 
-## Quick Start
-```bash
-pip install -r requirements.txt
-python free_pipeline.py "A robot who learns to paint"
-```
+6. **Update requirements.txt** — Add `anthropic` for quality scoring. Pin all versions. Add `setup.sh`.
+
+7. **Add output organization** — `outputs/images/YYYY-MM-DD/`, `outputs/videos/YYYY-MM-DD/`. Timestamp + prompt slug filenames. `outputs/index.json` manifest.
+
+## Do Not Touch
+- outputs/ directory contents (existing generated files)
+- __pycache__/ (auto-generated)
+
+## Definition of Done
+- [ ] AUDIT.md written
+- [ ] Muapi.ai / Open-Generative-AI integrated with free fallback
+- [ ] Batch processing queue works end-to-end
+- [ ] Unified CLI (`python main.py --help`) works
+- [ ] No Python import errors on startup
+- [ ] Pushed to main with "replit: " prefix
